@@ -41,6 +41,26 @@ jobs:
         if: always()
         run: cat reports/qualite_silver.md >> "$GITHUB_STEP_SUMMARY" || true
 
+      - name: Indicateurs clés de l'exécution
+        run: |
+          python - <<'EOF'
+          import csv, glob, json, re
+          from collections import Counter
+
+          rapport = json.load(open("reports/qualite_silver.json", encoding="utf-8"))
+          for table, r in rapport.items():
+              print(f"::notice title=Qualité {table}::{r['lignes_bronze']:,} lignes Bronze, "
+                    f"{r['doublons_supprimes']:,} doublons, {sum(r['rejets'].values()):,} rejets {r['rejets']}, "
+                    f"{r['lignes_silver']:,} lignes Silver ({r['taux_rejet']:.2%} écartées)")
+
+          vue = glob.glob("exports/vue_360_client/*.csv")[0]
+          statuts = Counter(row["statut_engagement"] for row in csv.DictReader(open(vue, encoding="utf-8")))
+          print(f"::notice title=Vue 360::{sum(statuts.values()):,} abonnés : {dict(statuts)}")
+
+          duree = re.search(r"Pipeline terminé en ([\d.]+) s", open("reports/execution.log", encoding="utf-8").read())
+          print(f"::notice title=Durée::Pipeline complet en {duree.group(1)} s")
+          EOF
+
       - name: Publication des rapports et des exports Power BI
         if: always()
         uses: actions/upload-artifact@v4
