@@ -56,6 +56,22 @@ erDiagram
 | `vue_360_client` | Une ligne par abonné : usage, revenu, cellule principale, inactivité, **statut d'engagement** (actif, faible usage, à risque de churn) et décile de valeur | `ROW_NUMBER`, `NTILE`, `GREATEST`, paramètres nommés |
 | `arpu_offre_segment` | ARPU, revenu médian et part du revenu par offre et segment | `PERCENTILE_APPROX`, fenêtre `SUM() OVER ()` |
 
+## Résultats d'une exécution complète
+
+Exécution GitHub Actions (runner standard, Spark en local) : **pipeline complet en 91 s**,
+de la génération des sources jusqu'aux exports Power BI.
+
+| Table | Lignes Bronze | Doublons supprimés | Lignes rejetées (motifs) | Lignes Silver | Taux écarté |
+| --- | ---: | ---: | --- | ---: | ---: |
+| cdr | 2 009 928 | 9 928 | 9 824 (MSISDN invalide 5 987, date hors période 2 024, durée négative 1 813) | 1 990 176 | 0,98 % |
+| mobile_money | 502 500 | 2 500 | 510 (montant invalide) | 499 490 | 0,60 % |
+| recharges | 300 000 | 0 | 630 (montant invalide) | 299 370 | 0,21 % |
+| clients | 50 527 | 527 | 0 | 50 000 | 1,04 % |
+| cellules | 400 | 0 | 0 | 400 | 0,00 % |
+
+La vue 360 isole **4 002 abonnés à risque de churn sur 50 000** (inactifs depuis plus de
+7 jours), ce qui correspond aux 8 % de churners simulés dans les données.
+
 ## Exécution
 
 ### GitHub Actions
