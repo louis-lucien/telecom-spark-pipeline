@@ -1,0 +1,30 @@
+# Configuration du pipeline télécom (aucun paramètre en dur dans le code)
+
+periode:
+  debut: "2026-09-01"   # premier jour analysé
+  jours: 30             # nombre de jours (fin exclusive)
+
+generation:             # volumes des données synthétiques
+  clients: 50000
+  cellules: 400
+  cdr: 2000000          # Call Detail Records (voix, SMS, data)
+  recharges: 300000
+  mobile_money: 500000
+  churn_pct: 8          # % d'abonnés qui cessent toute activité en cours de période
+  seed: 42
+
+paths:
+  raw: data/raw          # fichiers sources (CSV / JSON)
+  bronze: data/bronze    # copie brute typée en Parquet
+  silver: data/silver    # données nettoyées, partitionnées par jour
+  gold: data/gold        # modèle en étoile + marts analytiques
+  exports: exports       # marts en CSV pour Power BI
+  reports: reports       # rapports de qualité
+
+qualite:
+  taux_rejet_max: 0.05   # au-delà, le pipeline s'arrête (quality gate)
+
+spark:
+  app_name: telecom-spark-pipeline
+  master: "local[*]"
+  shuffle_partitions: 16

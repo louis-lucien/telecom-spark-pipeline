@@ -1,0 +1,51 @@
+name: pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  tests-et-pipeline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Installation
+        run: pip install -r requirements.txt
+
+      - name: Tests unitaires
+        run: pytest -q
+
+      - name: Pipeline complet (génération -> Bronze -> Silver -> Gold -> marts)
+        env:
+          PYTHONPATH: src
+        run: |
+          set -o pipefail
+          mkdir -p reports
+          spark-submit --driver-memory 4g src/main.py --step all 2>&1 | tee reports/execution.log
+
+      - name: Rapport qualité dans le résumé
+        if: always()
+        run: cat reports/qualite_silver.md >> "$GITHUB_STEP_SUMMARY" || true
+
+      - name: Publication des rapports et des exports Power BI
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rapports-et-exports
+          path: |
+            reports/
+            exports/
